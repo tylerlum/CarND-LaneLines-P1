@@ -4,6 +4,18 @@ The goals of this project are to:
 * Make a pipeline that finds lane lines on the road using Python and OpenCV
 * Write a report that describes the pipeline, identifies potential shortcomings, and suggests possible improvements
 
+## Examples of the code in action
+
+![Alt Text](files_for_documents/solidWhiteRight.gif)
+
+_Figure 1: Lane line detection is very accurate for simple scenarios_
+
+---
+
+![Alt Text](files_for_documents/challenge.gif)
+
+_Figure 2: Lane line detection still works reasonably well in challenging scenarios that include turns and changing lighting_
+
 ---
 
 ## 1. Description of the pipeline
@@ -30,7 +42,7 @@ My pipeline consists of 8 steps.
 
 ![image](https://user-images.githubusercontent.com/26510814/80288619-ebd1fc80-86ed-11ea-9a20-e177708ed83f.png)
 
-_Figure 1: Images showing the lane line finding algorithm in process_
+_Figure 3: Images showing the lane line finding algorithm in process_
 
 ---
 
@@ -45,7 +57,7 @@ __Issue 1: Slightly inaccurate extrapolation from filtered lines to two lane lin
 
 ![image](https://user-images.githubusercontent.com/26510814/80288680-55eaa180-86ee-11ea-9da1-62667552b255.png)
 
-_Figure 2: The red lines are the filtered lines. The green lines are the extrapolated two lines. It appears that the filtered lines are being identified well, but the extrapolated lane lines did not come out as expected._
+_Figure 4: The red lines are the filtered lines. The green lines are the extrapolated two lines. It appears that the filtered lines are being identified well, but the extrapolated lane lines did not come out as expected._
 
 ---
 
@@ -53,7 +65,7 @@ __Issue 2: Very poor extrapolation from filtered lines to two lane lines__
 
 ![image](https://user-images.githubusercontent.com/26510814/80288722-ab26b300-86ee-11ea-8fd4-2a9e347c4fc5.png)
 
-_Figure 3: The red lines are the filtered lines. The green lines are the extrapolated two lines. It appears that the filtered lines are being identified reasonably well, but there are some poorly identified vertical lines and one of the extrapolated lane lines is terribly off._
+_Figure 5: The red lines are the filtered lines. The green lines are the extrapolated two lines. It appears that the filtered lines are being identified reasonably well, but there are some poorly identified vertical lines and one of the extrapolated lane lines is terribly off._
 
 ---
 
@@ -61,7 +73,7 @@ __Issue 3: Inability to detect lane lines in sunlight__
 
 ![image](https://user-images.githubusercontent.com/26510814/80288860-c219d500-86ef-11ea-8b9c-d6dd465846c7.png)
 
-_Figure 4: In the challenge video, I got this output which is a warning print statement that I wrote for the edge case in which no lines were found at all. I found that this was happening when the lighting changed. The sunlight made the yellow lines hard to identify._
+_Figure 6: In the challenge video, I got this output which is a warning print statement that I wrote for the edge case in which no lines were found at all. I found that this was happening when the lighting changed. The sunlight made the yellow lines hard to identify._
 
 ---
 
@@ -71,15 +83,15 @@ _Figure 4: In the challenge video, I got this output which is a warning print st
 
 ![image](https://user-images.githubusercontent.com/26510814/80290301-53417980-86f9-11ea-801b-47655f4c8a10.png)
 
-_Figure 5: Comparison of edgesImage (output from Canny edge detection) without sunlight (top image) and with sunlight (middle image). The bottom image shows what the sunlight condition looks like. Clearly the Canny edge detection thresholds must be modified. The future steps have no edges to work with, so changing their parameters will not improve the line detection in sunlight._
+_Figure 7: Comparison of edgesImage (output from Canny edge detection) without sunlight (top image) and with sunlight (middle image). The bottom image shows what the sunlight condition looks like. Clearly the Canny edge detection thresholds must be modified. The future steps have no edges to work with, so changing their parameters will not improve the line detection in sunlight._
 
 ---
 
 From these symptoms, I identified these solutions:
 
-* __Solution to Issue 1__: To resolve the issue in which filtered lines looked accurate, but the extrapolated two lines were slightly off, I changed the method of averaging. First, I made this a weighted average calculation, so each line's contribution to the average is scaled by its length. This ensures that long lines make a larger contribution to the extrapolation than short ones. This resolved issue 1 shown in Figure 2 by improving the accuracy of the extrapolated lines when they were slightly off. However, this did not fix issue 2 shown in Figure 3, where the extrapolated line is totally off. 
+* __Solution to Issue 1__: To resolve the issue in which filtered lines looked accurate, but the extrapolated two lines were slightly off, I changed the method of averaging. First, I made this a weighted average calculation, so each line's contribution to the average is scaled by its length. This ensures that long lines make a larger contribution to the extrapolation than short ones. This resolved issue 1 shown in Figure 4 by improving the accuracy of the extrapolated lines when they were slightly off. However, this did not fix issue 2 shown in Figure 5, where the extrapolated line is totally off. 
 
-* __Solution to Issue 2__: I realized this issue was related to the nearly vertical lines, as they would have incredibly large slope and interept values, which would completely throw off the weighted average. I resolved this issue by changing the state space in which the averaging was performed. I converted each line to its (rho, theta) representation and then performed the weighted average calculation on these values, since their range is much smaller and the weighted average calculation would be more stable. At the end, I would convert the averaged rho and theta back to slope and intercept, which resolved issue 2 shown in Figure 3.
+* __Solution to Issue 2__: I realized this issue was related to the nearly vertical lines, as they would have incredibly large slope and interept values, which would completely throw off the weighted average. I resolved this issue by changing the state space in which the averaging was performed. I converted each line to its (rho, theta) representation and then performed the weighted average calculation on these values, since their range is much smaller and the weighted average calculation would be more stable. At the end, I would convert the averaged rho and theta back to slope and intercept, which resolved issue 2 shown in Figure 5.
 
 * __Solution to Issue 3__: To resolve the issue in which sunlight ruined the edge detection, I modified the Canny edge detection thresholds to be able to detect lines, even in these lighting conditions. However, this made the algorithm more susceptible to noise, as it would find irrelevant lines in the center that threw off the average. Thus, I modified the region of interest from its original trapezoid by removing a triangle shaped region in the center. This way, I would still be looking in a reasonably large region of interest to be able to see lane lines of different curvatures, but not be affected by noise in the middle of the road. I also added a "static" variable that stored the most recent lines found. If there were ever no lines found, it would still print out the warning message, but rather than return complete dummy values, it would return the most recent lines.
 
