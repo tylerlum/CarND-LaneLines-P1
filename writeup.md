@@ -34,12 +34,12 @@ _Figure 1: Images showing the lane line finding algorithm in process_
 
 ---
 
-There is an additional optional step between steps 7 and 8 that averages the lane lines identified from this image with the lane lines identified in the last X prevous images, which has the effect of stabilizing lane lines in videos. It does this by storing a "static" variable of a list of past lines, which has a maximum size (ensures that the lane lines still change responsively) and resets automatically after a certain time period (prevents the stored values in a previous video's processing to affect a different video's processing). This effect should only be turned off for different images processed in succession.
+There is an additional optional step between steps 7 and 8 that averages the lane lines identified from this image with the lane lines identified in the last X prevous images, which has the effect of stabilizing lane lines in videos. It does this by storing a "static" variable of a list of past lines, which has a maximum size (ensures that the lane lines still change responsively) and resets automatically after a certain time period (prevents the stored values in a previous video's processing to affect a different video's processing). This effect should only be turned off when images from entirely different scenarios are processed in quick succession.
 
 
 ### Key Challenges and Design Decisions
 
-In my first iteration, I set very standard values for all of the initial steps. For Step 6, I only filtered out lines that were sloped in the wrong direction, given their location (lines on the left should have negative slope and lines on the right should have positive slope). For Step 7, I performed calculated a simple average of the slopes and intercepts of the lines. While this worked reasonably well, there were a few key issues, which are shown below.
+In my first iteration, I set very standard values for all of the initial steps. For Step 6, I only filtered out lines that were sloped in the wrong direction, given their location (lines on the left should have negative slope and lines on the right should have positive slope). For Step 7, I calculated a simple average of the slopes and intercepts of the lines. While this worked reasonably well, there were a few key issues, which are shown below.
 
 __Issue 1: Slightly inaccurate extrapolation from filtered lines to two lane lines__
 
@@ -69,7 +69,9 @@ _Figure 4: In the challenge video, I got this output which is a warning print st
 
 ![image](https://user-images.githubusercontent.com/26510814/80289001-95b28880-86f0-11ea-9512-76d15071b838.png)
 
-_Figure 5: Comparison of edgesImage (output from Canny edge detection) without sunlight (top image) and with sunlight (bottom image). Clearly the Canny edge detection thresholds must be modified. The future steps have no edges to work with, so changing their parameters will not improve the line detection in sunlight._
+![image](https://user-images.githubusercontent.com/26510814/80290301-53417980-86f9-11ea-801b-47655f4c8a10.png)
+
+_Figure 5: Comparison of edgesImage (output from Canny edge detection) without sunlight (top image) and with sunlight (middle image). The bottom image shows what the sunlight condition looks like. Clearly the Canny edge detection thresholds must be modified. The future steps have no edges to work with, so changing their parameters will not improve the line detection in sunlight._
 
 ---
 
@@ -77,7 +79,7 @@ From these symptoms, I identified these solutions:
 
 * __Solution to Issue 1__: To resolve the issue in which filtered lines looked accurate, but the extrapolated two lines were slightly off, I changed the method of averaging. First, I made this a weighted average calculation, so each line's contribution to the average is scaled by its length. This ensures that long lines make a larger contribution to the extrapolation than short ones. This resolved issue 1 shown in Figure 2 by improving the accuracy of the extrapolated lines when they were slightly off. However, this did not fix issue 2 shown in Figure 3, where the extrapolated line is totally off. 
 
-* __Solution to Issue 2__: I realized this issue was related to the nearly vertical lines, as they would have incredibly large slope and interept values, which would completely throw off the weighted average. I resolved this issue by changing the state space in which the averaging was performed. I converted each line to its rho, theta representation and then performed the weighted average calculation on these values, since their range is much smaller and the weighted average calculation would be more stable. At the end, I would convert the averaged rho and theta back to slope and intercept, which resolved issue 2 shown in Figure 3.
+* __Solution to Issue 2__: I realized this issue was related to the nearly vertical lines, as they would have incredibly large slope and interept values, which would completely throw off the weighted average. I resolved this issue by changing the state space in which the averaging was performed. I converted each line to its (rho, theta) representation and then performed the weighted average calculation on these values, since their range is much smaller and the weighted average calculation would be more stable. At the end, I would convert the averaged rho and theta back to slope and intercept, which resolved issue 2 shown in Figure 3.
 
 * __Solution to Issue 3__: To resolve the issue in which sunlight ruined the edge detection, I modified the Canny edge detection thresholds to be able to detect lines, even in these lighting conditions. However, this made the algorithm more susceptible to noise, as it would find irrelevant lines in the center that threw off the average. Thus, I modified the region of interest from its original trapezoid by removing a triangle shaped region in the center. This way, I would still be looking in a reasonably large region of interest to be able to see lane lines of different curvatures, but not be affected by noise in the middle of the road. I also added a "static" variable that stored the most recent lines found. If there were ever no lines found, it would still print out the warning message, but rather than return complete dummy values, it would return the most recent lines.
 
@@ -87,11 +89,11 @@ From these symptoms, I identified these solutions:
 
 Some potential shortcomings of the pipeline include:
 
-* __Limited region of interest__: As of right now, the region of interest is a trapezoid with a center triangle removed. This works very well for forward-facing cameras on cars and for situations in which the car is simply staying in the middle of the lane. However, this would not work well for cameras that look side-ways or diagonally, or if they are tilted upwards or downward.
+* __Limited region of interest__: As of right now, the region of interest is a trapezoid with a center triangle removed. This works very well for forward-facing cameras on cars and for situations in which the car is simply staying in the middle of the lane. However, this would not work well for cameras that look side-ways or diagonally, or if they are tilted upwards or downwards.
 
 * __Potential sensitivity to lighting__: As of right now, the parameters are set to work very well in well-lit conditions like those shown in the test images and videos. However, in situations with very, very high brightness (sun shining directly at the camera) or low-brightness (lighting from moon, streetlights, or headlights), this may not be able to detect lines properly.
 
-* __Inability to detect draw curved lines__: As of right now, the lane lines detected are always two straight lines. While this works well for straight roads or slightly curved roads, this may not work for roads with sharper turns, such as round-abouts.
+* __Inability to draw curved lines__: As of right now, the lane lines detected are always two straight lines. While this works well for straight roads or slightly curved roads, this may not work for roads with sharper turns, such as round-abouts.
 
 ## 3. Possible improvements to the pipeline
 
@@ -99,7 +101,7 @@ Some potential shortcomings of the pipeline include:
 
 * __Improving filtering algorithm__: The filtering algorithm could be improved to not simply remove lines with a certain slope range, but to use graph algorithms to identify clusters and outliers. The clusters can be merged together into single lines and the outliers can be removed.
 
-* __Improving line merging algorithm__: The line merging algorithm currently uses a weighted average of the rho, theta of the lines. It also averages across frames to reduce shakiness. However, this could be improved by more robust algorithms, such as using a median filter and removing outliers.
+* __Improving line merging algorithm__: The line merging algorithm currently uses a weighted average of the (rho, theta) of the lines. It also averages across frames to reduce shakiness. However, this could be improved by more robust algorithms, such as using a median filter and removing outliers.
 
 * __Changing parameters based on situation__: Rather than rely on hard-coded parameters for edge and line detection, we could have these parameters change automatically based on situations such as lighting conditions, weather, speed, etc.
 
