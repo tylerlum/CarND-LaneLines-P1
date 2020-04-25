@@ -4,8 +4,12 @@ The purpose of this project is to implement a computer vision solution to lane l
 
 ## Examples of the code in action
 
-![Alt Text](files_for_docuemnts/challenge.gif)
+![Alt Text](files_for_documents/solidWhiteRight.gif)
 
-![Alt Text](files_for_docuemnts/solidWhiteRight.gif)
+_Figure 1: Lane line detection is very accurate for simple scenarios_
+
+![Alt Text](files_for_documents/challenge.gif)
+
+_Figure 2: Lane line detection still works in challenging scnarios that include turns_
 
 To read more about the project, you can view the report writeup [here](writeup.md).
