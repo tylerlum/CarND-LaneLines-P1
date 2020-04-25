@@ -10,7 +10,7 @@ _Figure 1: Lane line detection is very accurate for simple scenarios_
 
 ![Alt Text](files_for_documents/challenge.gif)
 
-_Figure 2: Lane line detection still works in challenging scenarios that include turns_
+_Figure 2: Lane line detection still works reasonably well in challenging scenarios that include turns and changing lighting_
 
 To read more about the project, you can view the report writeup [here](writeup.md).
 
