@@ -1,6 +1,6 @@
 # **Finding Lane Lines on the Road** 
 
-The purpose of this project is to implement a computer vision solution to lane line detection for potential self-driving car applications. The program takes in an image taken from a car's forward-facing camera and outputs an image with the lane lines highlighted in red. 
+The purpose of this project is to implement a computer vision solution for lane line detection for potential self-driving car applications. The program takes in an image taken from a car's forward-facing camera and outputs an image with the lane lines highlighted in red. 
 
 ## Examples of the code in action
 
@@ -20,4 +20,4 @@ To read more about the project, you can view the report writeup [here](writeup.m
 
 2. Open the code in a Jupyter Notebook by running `jupyter notebook`.
 
-3. Run the code by clicking Cell > Run All
+3. Run the code by clicking Cell > Run All.
